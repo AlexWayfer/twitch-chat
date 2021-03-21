@@ -26,11 +26,32 @@ $ gem install twitch-chat
 
 ## Usage
 
+Instead of requiring single `access_token` (it works like a password),
+this gem requires `tokens` object provided
+by [`twitch_oauth2` gem](https://rubygems.org/gems/twitch_oauth2).
+
+This approach allows to has auto-refreshing `access_token`
+(which has a life time) after reconnecting
+(sometimes there are problems with connection,
+sometimes Twitch restarts its servers) and keep chat alive.
+
+If you use some Twitch API client — you can re-use this `tokens` object
+for authentication.
+
 ```ruby
 require 'twitch/chat'
 
+require 'twitch_oauth2'
+tokens = TwitchOAuth2::Tokens.new(
+  client: {
+    client_id: 'application_client_id',
+    client_secret: 'application_client_secret'
+  },
+  scopes: %w[chat:read chat:edit channel:moderate channel_editor]
+)
+
 client = Twitch::Chat::Client.new(
-  channel: 'channel', nickname: 'nickname', password: 'twitch_oath_token'
+  channel: 'channel', nickname: 'nickname', tokens: tokens
 ) do
   on :join do |channel|
     send_message "Hi guys on #{channel}!"
@@ -82,7 +103,7 @@ You can also join to channel later:
 
 ```ruby
 client = Twitch::Chat::Client.new(
-  nickname: 'nickname', password: 'twitch_oath_token'
+  nickname: 'nickname', tokens: tokens
 ) do
   on :message do |message|
     if message.text.include?("Hi #{nickname}")
@@ -121,7 +142,7 @@ If local variable access is needed, the first block variable is the client:
 
 ```ruby
 Twitch::Chat::Client.new(
-  channel: 'channel', nickname: 'nickname', password: 'twitch_oath_token'
+  channel: 'channel', nickname: 'nickname', tokens: tokens
 ) do |client|
   # client is the client instance
 end
@@ -131,7 +152,7 @@ By default, logging is done to the ``STDOUT``, but you can change it by passing 
 
 ```ruby
 Twitch::Chat::Client.new(
-  channel: 'channel', nickname: 'nickname', password: 'twitch_oath_token',
+  channel: 'channel', nickname: 'nickname', tokens: tokens,
   output: 'file.log'
 )
 ```

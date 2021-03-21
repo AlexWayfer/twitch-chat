@@ -2,7 +2,18 @@
 
 describe Twitch::Chat::Client do
   let(:client) do
-    Twitch::Chat::Client.new(password: 'password', nickname: 'enotpoloskun')
+    Twitch::Chat::Client.new(
+      nickname: 'enotpoloskun',
+      tokens: tokens
+    )
+  end
+
+  let(:tokens) do
+    Object.new # TwitchOAuth2::Tokens.new
+  end
+
+  before do
+    allow(tokens).to receive(:access_token)
   end
 
   describe '#on' do

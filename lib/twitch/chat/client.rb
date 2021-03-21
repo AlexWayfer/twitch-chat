@@ -6,6 +6,8 @@ require 'logger'
 require 'socket'
 require 'timeout'
 
+require 'twitch_oauth2'
+
 require_relative 'message'
 require_relative 'channel'
 
@@ -17,16 +19,20 @@ module Twitch
       TWITCH_PERIOD = 30.0
 
       def initialize(
-        nickname:, password:, channel: nil,
-        host: 'irc.chat.twitch.tv', port: '6667', logger: Logger.new(STDOUT),
+        nickname:, channel: nil, tokens:,
+        host: 'irc.chat.twitch.tv', port: '6667',
+        logger: Logger.new(STDOUT),
         &block
       )
         @logger = logger
 
         @host = host
         @port = port
+
         @nickname = nickname
-        @password = password
+
+        @tokens = tokens
+
         @channel = Channel.new(channel) if channel
 
         @messages_queue = []
@@ -155,6 +161,8 @@ module Twitch
                 trigger :subscribe, message.params.last.split(' ').first
               when :reconnect
                 reconnect
+              when :login_failed
+                authenticate
               when :not_supported
                 trigger :not_supported, *message.params
               end
@@ -266,7 +274,7 @@ module Twitch
       end
 
       def authenticate
-        send_data "PASS #{@password}"
+        send_data "PASS oauth:#{@tokens.access_token}"
         send_data "NICK #{@nickname}"
       end
 
